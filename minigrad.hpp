@@ -10,6 +10,7 @@
 
 #define LW 100
 #define LH 3
+#define LAYER_TYPES	0, 't', 0
 
 #define ACTIVATION_SIGMOID 0
 #define ACTIVATION_RELU 1
@@ -74,6 +75,7 @@ struct Value
 
 			case '^':
 				value = powf(a1, a2);
+				break;
 
 			case 'r':
 				value = a1 > 0.0 ? a1 : 0.0;
@@ -113,6 +115,13 @@ struct Value
 		else
 			p2 = a2;
 */
+//		if (grad > 0.0f)
+//		printf("%c %f\n", op ? op : '0', grad);
+//
+		if (grad > 10.0f)
+			grad = 10.0f;
+		if (grad < -10.0f)
+			grad = -10.0f;
 		switch (op)
 		{
 			case 0:
@@ -135,11 +144,23 @@ struct Value
 				break;
 
 			case 'r':
-				if (prev0) prev0->grad += (p1 > 0) * grad;
+				if (prev0) prev0->grad += ((p1 > 0) ? 1.0f : 0.01f) * grad;
 				break;
 
 			case 't':
-				if (prev0) prev0->grad += (1.0f - tanhf(p1) * tanhf(p1)) * grad;
+//				printf("original prev grad: %f\n", prev0->grad);
+//				printf("p1=%f\n", p1);
+//				printf("dTanh() = %f\n", (1.0f - tanhf(p1) * tanhf(p1)));
+				if (prev0) 
+				{
+					float dtanh = (1.0f - tanhf(p1) * tanhf(p1));
+					if (fabs(dtanh) < 0.01f)
+					{
+						dtanh = p1/2.0f;
+					}
+					prev0->grad = dtanh * grad;
+				}
+//				printf("tanh grad: %f tanh prev grad: %f\n", grad, prev0->grad);
 				break;
 
 			default:
@@ -263,12 +284,15 @@ struct Node
 
 		this->input_width = input_width;
 		bias = new Value((rand() % 20000 - 10000) / 10000.0f);
+//		bias = new Value(0.0f);
 		this->act_op = act_op;
 
 		int i;
 		for (i = 0; i < input_width; i++)
 		{
 			weights[i] = new Value((rand() % 20000 - 10000) / 10000.0f);
+//			weights[i] = new Value((rand() % 20000 - 10000) / 10000.0f);
+//			weights[i] = new Value(1.0f);
 //			printf("w=%f\n", weights[i]->value);
 		}
 	}
@@ -399,7 +423,7 @@ class Network
 					0, 'r', 0, 't' 
 					};*/
 		char layer_types[LH] = {
-					0, 't', 0 
+					LAYER_TYPES
 					};
 	
 		int i;
@@ -409,7 +433,7 @@ class Network
 //					(i < LH - 1) ? 0 : 'r', // last layer is relu, for pixels, for some reason.
 					layer_types[i],
 					LW, 
-					(i==0) ? 2 : LW // we have two inputs and everything else is LW
+					(i==0) ? 1 : LW // we have two inputs and everything else is LW
 			);
 
 			layers[i].collect_params(params);
@@ -477,11 +501,19 @@ class Network
 
 	void optimize(float learning_rate)
 	{
+		int nonzero_count = 0;
 		for (auto&& v : params)
 		{
 //			printf("%f - %f * %f\n", v->value, learning_rate, v->grad);
+//
 			v->value = v->value - learning_rate * v->grad;
+			if (fabs(v->grad) > 0.0000000001f)
+			{
+				nonzero_count++;
+			}
 		}
+
+//		printf("optimized %d / %d nodes\n", nonzero_count, params.size());
 	}
 
 	void zero_grad()

@@ -12,7 +12,7 @@ Network network[100];
 int main(int argc, char** argv)
 {
 	int x, y, n;
-	unsigned char* data = stbi_load("../../t/1.png", &x, &y, &n, 1);
+	unsigned char* data = stbi_load("../../t/2.png", &x, &y, &n, 1);
 	
 	printf("x=%d y=%d n=%d\n", x, y, n);
 
@@ -29,37 +29,37 @@ int main(int argc, char** argv)
 
 	for (yy = 0; yy < 100; yy++)
 	{
-		network[yy].init();
+		network[yy].init(10);
 	}
 
-	int epochs = 120;
+	int epochs = 1000;
 	float coords[3] = { 0.0f, 0.0f, 0.0f };
 	float encoded_input[10];
 	float* output = (float*)malloc(x*y*sizeof(float));
 //	float learning_rate = (1.0f / 255.0f) * 0.5f;
-	float learning_rate = 0.01f;
+	float learning_rate = 0.0001f;
 	while (epochs--)
 	{
-		if (epochs == 600) learning_rate /= 2.0f;
-		if (epochs == 500) learning_rate /= 2.0f;
-		if (epochs == 450) learning_rate /= 2.0f;
-		if (epochs == 400) learning_rate /= 2.0f;
-		if (epochs == 300) learning_rate /= 2.0f;
-		if (epochs == 200) learning_rate /= 2.0f;
-		if (epochs == 100) learning_rate /= 2.0f;
-		if (epochs == 70) learning_rate /= 2.0f;
-		if (epochs == 35) learning_rate /= 2.0f;
+		if (epochs == 600) learning_rate /= 10.0f;
+		if (epochs == 500) learning_rate /= 5.0f;
+		if (epochs == 450) learning_rate /= 5.0f;
+		if (epochs == 400) learning_rate /= 5.0f;
+		if (epochs == 300) learning_rate /= 5.0f;
+		if (epochs == 200) learning_rate /= 5.0f;
+		if (epochs == 100) learning_rate /= 5.0f;
+		if (epochs == 70) learning_rate /= 5.0f;
+		if (epochs == 35) learning_rate /= 5.0f;
 		if (epochs == 10) learning_rate /= 2.0f;
 
 		float cumulative_loss = 0.0f;
-		for (yy = 30; yy < 70; yy++)
-//		int test_count = 0;
-//		for (; test_count < 40; test_count++)
+//		for (yy = 30; yy < 70; yy++)
+		int test_count = 0;
+		for (; test_count < 40; test_count++)
 		{
-//			yy = 30 + (rand() % 40);
-//			coords[0] = yy / 50.0f - 1.0f;
 //			// We want to randomize the order in which lines are trained because the smoothness of moving continously from one row to the next is killing the loss and making learning difficult.
-			coords[0] = (30 + rand() % 40) / 50.0f - 1.0f;
+			yy = 30 + (rand() % 40);
+			coords[0] = yy / 50.0f - 1.0f;
+//			coords[0] = (30 + rand() % 40) / 50.0f - 1.0f;
 			Network::positional_encode(coords[0], encoded_input, 10);
 
 			float loss = network[0].stochastic_fit(encoded_input, 10, &float_data[yy * x], learning_rate, &output[yy * x]);

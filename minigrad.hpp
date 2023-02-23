@@ -9,8 +9,8 @@
 #include <cstdio>
 
 #define LW 100
-#define LH 2
-#define LAYER_TYPES	'r', 'r'
+#define LH 5
+#define LAYER_TYPES	0, 'r', 'r', 'r', 0
 
 #define ACTIVATION_SIGMOID 0
 #define ACTIVATION_RELU 1
@@ -78,7 +78,7 @@ struct Value
 				break;
 
 			case 'r':
-				value = a1 > 0.0 ? a1 : 0.0;
+				value = (a1 > 0.0f) ? a1 : 0.0f;
 				break;
 
 			case 't':
@@ -140,11 +140,11 @@ struct Value
 				break;
 
 			case '^':
-				if (prev0) prev0->grad += (p2 * powf(prev0->value, p2 - 1)) * grad;
+				if (prev0) prev0->grad += (p2 * powf(prev0->value, p2 - 1.0f)) * grad;
 				break;
 
 			case 'r':
-				if (prev0) prev0->grad += ((p1 > 0) ? 1.0f : 0.00f) * grad;
+				if (prev0) prev0->grad += ((p1 > 0.0f) ? 1.0f : 0.001f) * grad;
 				break;
 
 			case 't':
@@ -198,7 +198,7 @@ struct Value
 			build_topo(visited, topo, this);
 		}
 
-		grad = 1.0;
+		grad = 1.0f;
 
 /*		while (!topo.empty())
 		{
@@ -412,8 +412,12 @@ class Network
 		params.clear();
 	}
 
-	void init()
+	int input_width;
+
+	void init(int input_width)
 	{
+		this->input_width = input_width;
+
 		params.clear();
 		params.reserve((LH + 1) * (LW * (LW + 1)));
 
@@ -433,7 +437,7 @@ class Network
 //					(i < LH - 1) ? 0 : 'r', // last layer is relu, for pixels, for some reason.
 					layer_types[i],
 					LW, 
-					(i==0) ? 1 : LW // we have two inputs and everything else is LW
+					(i==0) ? input_width : LW // we have input_width inputs and everything else is LW
 			);
 
 			layers[i].collect_params(params);
@@ -442,14 +446,13 @@ class Network
 		memset(activations, 0, sizeof(activations));
 	}
 
-	int input_width;
 	Value** input_values;
 	Value** output_values;
 	Value* activations[LH+1][LW];
 
 	void forward(float* input, int input_width, float* output)
 	{
-		this->input_width = input_width;
+		assert(input_width == this->input_width);
 
 		int i;
 

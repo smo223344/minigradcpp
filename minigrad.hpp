@@ -9,8 +9,8 @@
 #include <cstdio>
 
 #define LW 100
-#define LH 3
-#define LAYER_TYPES	0, 't', 0
+#define LH 2
+#define LAYER_TYPES	'r', 'r'
 
 #define ACTIVATION_SIGMOID 0
 #define ACTIVATION_RELU 1
@@ -144,7 +144,7 @@ struct Value
 				break;
 
 			case 'r':
-				if (prev0) prev0->grad += ((p1 > 0) ? 1.0f : 0.01f) * grad;
+				if (prev0) prev0->grad += ((p1 > 0) ? 1.0f : 0.00f) * grad;
 				break;
 
 			case 't':
@@ -513,6 +513,8 @@ class Network
 			}
 		}
 
+		// TODO warn if zero grads?
+
 //		printf("optimized %d / %d nodes\n", nonzero_count, params.size());
 	}
 
@@ -534,12 +536,32 @@ class Network
 
 		forward(input, input_width, output);
 		Value* loss = compute_loss(predicted);
-		std::vector<Value*> topo;
-		loss->zero_grad(topo);
-		loss->backward(topo);
-		optimize(learning_rate);
+		if (learning_rate > 0.0f)
+		{
+			std::vector<Value*> topo;
+			loss->zero_grad(topo);
+			loss->backward(topo);
+			optimize(learning_rate);
+		}
 		
 //		delete[] output;
 		return loss->value;		
+	}
+
+	static void positional_encode(double x, float* encoded, int n_encoded)
+	{
+		int i;
+		double coefficient = 2.0;
+		for (i = 0; i < n_encoded; i++)
+		{
+			if (i % 2)
+			{
+				encoded[i] = (float)(M_PI * cos((double)x) * coefficient);
+				coefficient *= 2.0;
+			} else
+			{
+				encoded[i] = (float)(M_PI * sin((double)x) * coefficient);
+			}
+		}
 	}
 };

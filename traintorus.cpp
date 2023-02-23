@@ -32,26 +32,37 @@ int main(int argc, char** argv)
 		network[yy].init();
 	}
 
-	int epochs = 400;
+	int epochs = 120;
 	float coords[3] = { 0.0f, 0.0f, 0.0f };
+	float encoded_input[10];
 	float* output = (float*)malloc(x*y*sizeof(float));
 //	float learning_rate = (1.0f / 255.0f) * 0.5f;
 	float learning_rate = 0.01f;
 	while (epochs--)
 	{
-		if (epochs == 200) learning_rate /= 10.0f;
-		if (epochs == 100) learning_rate /= 10.0f;
-		if (epochs == 50) learning_rate /= 10.0f;
+		if (epochs == 600) learning_rate /= 2.0f;
+		if (epochs == 500) learning_rate /= 2.0f;
+		if (epochs == 450) learning_rate /= 2.0f;
+		if (epochs == 400) learning_rate /= 2.0f;
+		if (epochs == 300) learning_rate /= 2.0f;
+		if (epochs == 200) learning_rate /= 2.0f;
+		if (epochs == 100) learning_rate /= 2.0f;
+		if (epochs == 70) learning_rate /= 2.0f;
+		if (epochs == 35) learning_rate /= 2.0f;
+		if (epochs == 10) learning_rate /= 2.0f;
 
 		float cumulative_loss = 0.0f;
-//		for (yy = 20; yy < 60; yy++)
-		int test_count = 0;
-		for (; test_count < 40; test_count++)
+		for (yy = 30; yy < 70; yy++)
+//		int test_count = 0;
+//		for (; test_count < 40; test_count++)
 		{
-			yy = 30 + (rand() % 40);
-			coords[0] = yy -50.0f;/// 200.0f - 100.0f;
+//			yy = 30 + (rand() % 40);
+//			coords[0] = yy / 50.0f - 1.0f;
+//			// We want to randomize the order in which lines are trained because the smoothness of moving continously from one row to the next is killing the loss and making learning difficult.
+			coords[0] = (30 + rand() % 40) / 50.0f - 1.0f;
+			Network::positional_encode(coords[0], encoded_input, 10);
 
-			float loss = network[/*yy*/0].stochastic_fit(&coords[0], 1, &float_data[yy * x], learning_rate, &output[yy * x]);
+			float loss = network[0].stochastic_fit(encoded_input, 10, &float_data[yy * x], learning_rate, &output[yy * x]);
 //			printf("yy=%d epoch=%d loss=%f\n", yy, epochs, loss);
 			cumulative_loss += loss;
 		}
@@ -68,20 +79,21 @@ int main(int argc, char** argv)
 		{
 			int o = (int)((output[yy * x + xx] + 1.0f) * 127.5f);
 			if (o < 0)
-				o = o;
+				o = 0;
 			if (o > 255)
 				o = 255;
 			output_bytes[yy * x + xx] = (unsigned char)o;
 		}
 	}
 	
-	stbi_write_png("test_1_pre_infer.png", x, y, 1, output_bytes, x);
+	stbi_write_png("2test_1_pre_infer.png", x, y, 1, output_bytes, x);
 	
-	for (yy = 0; yy < 100; yy++)
+	for (yy = 30; yy < 70; yy++)
 	{
 		// TODO infer here
-		coords[0] = yy-50.0f;// / 200.0f - 100.0f;
-		float loss = network[0].stochastic_fit(&coords[0], 3, &float_data[yy * x], 0, &output[yy * x]);
+		coords[0] = yy / 50.0f - 1.0f;
+		Network::positional_encode(coords[0], encoded_input, 10);
+		float loss = network[0].stochastic_fit(encoded_input, 10, &float_data[yy * x], 0, &output[yy * x]);
 	}
 
 	for (xx = 0; xx < x; xx++)
@@ -90,14 +102,14 @@ int main(int argc, char** argv)
 		{
 			int o = (int)((output[yy * x + xx] + 1.0f) * 127.5f);
 			if (o < 0)
-				o = o;
+				o = 0;
 			if (o > 255)
 				o = 255;
 			output_bytes[yy * x + xx] = (unsigned char)o;
 		}
 	}
 
-	stbi_write_png("test_2_post_infer.png", x, y, 1, output_bytes, x);
+	stbi_write_png("2test_2_post_infer.png", x, y, 1, output_bytes, x);
 
 
 	return 0;

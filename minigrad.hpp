@@ -9,8 +9,8 @@
 #include <cstdio>
 
 #define LW 100
-#define LH 5
-#define LAYER_TYPES	0, 'r', 'r', 'r', 0
+#define LH 8
+#define LAYER_TYPES	0, 'r', 'r', 'r', 'r', 'r', 'r', 0
 
 #define ACTIVATION_SIGMOID 0
 #define ACTIVATION_RELU 1
@@ -27,6 +27,19 @@ struct Value
 	float p1, p2;
 
 	float grad;
+
+	static float rand_normal()
+	{
+		int i;
+		float sum = 0.0f;
+
+		for (i = 0; i < 100; i++)
+		{
+			sum += (rand() % 2000) / 1000.0f - 1.0f;
+		}
+
+		return sum;
+	}
 	
 
 	Value(char _op, float a1, float a2, Value* arg1, Value* arg2)
@@ -118,10 +131,10 @@ struct Value
 //		if (grad > 0.0f)
 //		printf("%c %f\n", op ? op : '0', grad);
 //
-		if (grad > 10.0f)
-			grad = 10.0f;
-		if (grad < -10.0f)
-			grad = -10.0f;
+		if (grad > 100.0f)
+			grad = 100.0f;
+		if (grad < -100.0f)
+			grad = -100.0f;
 		switch (op)
 		{
 			case 0:
@@ -283,14 +296,16 @@ struct Node
 		assert(input_width <= LW);
 
 		this->input_width = input_width;
-		bias = new Value((rand() % 20000 - 10000) / 10000.0f);
+		bias = new Value(Value::rand_normal());
+//		bias = new Value((rand() % 20000 - 10000) / 10000.0f);
 //		bias = new Value(0.0f);
 		this->act_op = act_op;
 
 		int i;
 		for (i = 0; i < input_width; i++)
 		{
-			weights[i] = new Value((rand() % 20000 - 10000) / 10000.0f);
+			weights[i] = new Value(Value::rand_normal());
+//			weights[i] = new Value((rand() % 20000 - 10000) / 10000.0f);
 //			weights[i] = new Value((rand() % 20000 - 10000) / 10000.0f);
 //			weights[i] = new Value(1.0f);
 //			printf("w=%f\n", weights[i]->value);

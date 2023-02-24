@@ -9,12 +9,56 @@
 
 Network network[100];
 
+void save_output(float* output, int x, int y, int iter)
+{
+	int xx, yy;
+
+	unsigned char* output_bytes = (unsigned char*)malloc(x*y);
+	
+	// clamp just in case we go above 255 or below 0
+	for (xx = 0; xx < x; xx++)
+	{
+		for (yy = 0; yy < y; yy++)
+		{
+			int o = (int)((output[yy * x + xx] + 1.0f) * 127.5f);
+			if (o < 0)
+				o = 0;
+			if (o > 255)
+				o = 255;
+			output_bytes[yy * x + xx] = (unsigned char)o;
+		}
+	}
+	
+	char filename[32];
+	snprintf(filename, 32, "2test_iter_%03d.png", iter);
+	stbi_write_png(filename, x, y, 1, output_bytes, x);
+
+	free(output_bytes);
+}
+
+
+
 int main(int argc, char** argv)
 {
 	int x, y, n;
 	unsigned char* data = stbi_load("../../t/2.png", &x, &y, &n, 1);
 	
 	printf("x=%d y=%d n=%d\n", x, y, n);
+
+	int i, j;
+	for (i = 0; i < 100; i++)
+	{
+		if (i % 3 == 0)
+		{
+			for (j = 0; j < 100; j++)
+			{
+				if (j % 3 == 0)
+					printf("%02x ", data[i * x + j]);
+			}
+			printf("\n");
+		}
+		
+	}
 
 	float* float_data = (float*)malloc(x*y*sizeof(float));
 
@@ -32,12 +76,13 @@ int main(int argc, char** argv)
 		network[yy].init(10);
 	}
 
-	int epochs = 1000;
+	int total_epochs = 1000;
+	int epochs = total_epochs;
 	float coords[3] = { 0.0f, 0.0f, 0.0f };
 	float encoded_input[10];
 	float* output = (float*)malloc(x*y*sizeof(float));
 //	float learning_rate = (1.0f / 255.0f) * 0.5f;
-	float learning_rate = 0.0001f;
+	float learning_rate = 0.001f;
 	while (epochs--)
 	{
 		if (epochs == 600) learning_rate /= 10.0f;
@@ -70,47 +115,24 @@ int main(int argc, char** argv)
 		if (new_learning_rate < learning_rate)
 			learning_rate = new_learning_rate;*/
 		printf("epoch = %d, avg loss = %f\n", epochs, cumulative_loss / 40.0f);
-	}
-	
-	unsigned char* output_bytes = (unsigned char*)malloc(x*y);
-	for (xx = 0; xx < x; xx++)
-	{
-		for (yy = 0; yy < y; yy++)
+
+		if (epochs % 50 == 0)
 		{
-			int o = (int)((output[yy * x + xx] + 1.0f) * 127.5f);
-			if (o < 0)
-				o = 0;
-			if (o > 255)
-				o = 255;
-			output_bytes[yy * x + xx] = (unsigned char)o;
+			// TODO Note we are saving the buffer of different training passes combined so it won't look quite right
+			save_output(output, x, y, total_epochs - epochs);
 		}
 	}
 	
-	stbi_write_png("2test_1_pre_infer.png", x, y, 1, output_bytes, x);
 	
 	for (yy = 30; yy < 70; yy++)
 	{
-		// TODO infer here
+		// infer 
 		coords[0] = yy / 50.0f - 1.0f;
 		Network::positional_encode(coords[0], encoded_input, 10);
 		float loss = network[0].stochastic_fit(encoded_input, 10, &float_data[yy * x], 0, &output[yy * x]);
 	}
 
-	for (xx = 0; xx < x; xx++)
-	{
-		for (yy = 0; yy < y; yy++)
-		{
-			int o = (int)((output[yy * x + xx] + 1.0f) * 127.5f);
-			if (o < 0)
-				o = 0;
-			if (o > 255)
-				o = 255;
-			output_bytes[yy * x + xx] = (unsigned char)o;
-		}
-	}
-
-	stbi_write_png("2test_2_post_infer.png", x, y, 1, output_bytes, x);
-
+	save_output(output, x, y, 99999);
 
 	return 0;
 }

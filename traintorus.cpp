@@ -7,7 +7,7 @@
 #include "../stb/stb_image_write.h"
 
 
-Network network[100];
+Network network;
 
 void save_output(float* output, int x, int y, int iter)
 {
@@ -30,7 +30,7 @@ void save_output(float* output, int x, int y, int iter)
 	}
 	
 	char filename[32];
-	snprintf(filename, 32, "2test_iter_%03d.png", iter);
+	snprintf(filename, 32, "3test_iter_%03d.png", iter);
 	stbi_write_png(filename, x, y, 1, output_bytes, x);
 
 	free(output_bytes);
@@ -71,15 +71,13 @@ int main(int argc, char** argv)
 		}
 	}
 
-	for (yy = 0; yy < 100; yy++)
-	{
-		network[yy].init(10);
-	}
+	network.init(20);
+	
 
 	int total_epochs = 1000;
 	int epochs = total_epochs;
 	float coords[3] = { 0.0f, 0.0f, 0.0f };
-	float encoded_input[10];
+	float encoded_input[20];
 	float* output = (float*)malloc(x*y*sizeof(float));
 //	float learning_rate = (1.0f / 255.0f) * 0.5f;
 	float learning_rate = 0.001f;
@@ -99,15 +97,18 @@ int main(int argc, char** argv)
 		float cumulative_loss = 0.0f;
 //		for (yy = 30; yy < 70; yy++)
 		int test_count = 0;
-		for (; test_count < 40; test_count++)
+		for (; test_count < 400; test_count++)
 		{
 //			// We want to randomize the order in which lines are trained because the smoothness of moving continously from one row to the next is killing the loss and making learning difficult.
+			xx = 20 + rand() % 80;
 			yy = 30 + (rand() % 40);
 			coords[0] = yy / 50.0f - 1.0f;
+			coords[1] = xx / 50.0f - 1.0f;
 //			coords[0] = (30 + rand() % 40) / 50.0f - 1.0f;
 			Network::positional_encode(coords[0], encoded_input, 10);
+			Network::positional_encode(coords[1], &encoded_input[10], 10);
 
-			float loss = network[0].stochastic_fit(encoded_input, 10, &float_data[yy * x], learning_rate, &output[yy * x]);
+			float loss = network.stochastic_fit(encoded_input, 20, &float_data[yy * x + xx], learning_rate, &output[yy * x + xx]);
 //			printf("yy=%d epoch=%d loss=%f\n", yy, epochs, loss);
 			cumulative_loss += loss;
 		}
@@ -116,9 +117,21 @@ int main(int argc, char** argv)
 			learning_rate = new_learning_rate;*/
 		printf("epoch = %d, avg loss = %f\n", epochs, cumulative_loss / 40.0f);
 
-		if (epochs % 50 == 0)
+		if (epochs % 5 == 0)
 		{
 			// TODO Note we are saving the buffer of different training passes combined so it won't look quite right
+			for (yy = 30; yy < 70; yy++)
+			{
+				for (xx = 0; xx < 100; xx++)
+				{
+					// infer 
+					coords[0] = yy / 50.0f - 1.0f;
+					coords[1] = xx / 50.0f - 1.0f;
+					Network::positional_encode(coords[0], encoded_input, 10);
+					Network::positional_encode(coords[1], &encoded_input[10], 10);
+					float loss = network.stochastic_fit(encoded_input, 20, &float_data[yy * x + xx], 0, &output[yy * x + xx]);
+				}
+			}
 			save_output(output, x, y, total_epochs - epochs);
 		}
 	}
@@ -126,10 +139,15 @@ int main(int argc, char** argv)
 	
 	for (yy = 30; yy < 70; yy++)
 	{
-		// infer 
-		coords[0] = yy / 50.0f - 1.0f;
-		Network::positional_encode(coords[0], encoded_input, 10);
-		float loss = network[0].stochastic_fit(encoded_input, 10, &float_data[yy * x], 0, &output[yy * x]);
+		for (xx = 0; xx < 100; xx++)
+		{
+			// infer 
+			coords[0] = yy / 50.0f - 1.0f;
+			coords[1] = xx / 50.0f - 1.0f;
+			Network::positional_encode(coords[0], encoded_input, 10);
+			Network::positional_encode(coords[1], &encoded_input[10], 10);
+			float loss = network.stochastic_fit(encoded_input, 20, &float_data[yy * x + xx], 0, &output[yy * x + xx]);
+		}
 	}
 
 	save_output(output, x, y, 99999);

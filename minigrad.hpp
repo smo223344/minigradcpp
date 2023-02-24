@@ -9,8 +9,9 @@
 #include <cstdio>
 
 #define LW 100
-#define LH 8
-#define LAYER_TYPES	0, 'r', 'r', 'r', 'r', 'r', 'r', 0
+#define LH 5
+#define LAYER_TYPES	0, 'r', 'r', 'r', 0
+#define LWO 1
 
 #define ACTIVATION_SIGMOID 0
 #define ACTIVATION_RELU 1
@@ -428,10 +429,12 @@ class Network
 	}
 
 	int input_width;
+	int last_layer_width;
 
 	void init(int input_width)
 	{
 		this->input_width = input_width;
+		last_layer_width = LWO;
 
 		params.clear();
 		params.reserve((LH + 1) * (LW * (LW + 1)));
@@ -451,8 +454,8 @@ class Network
 			layers[i].init(
 //					(i < LH - 1) ? 0 : 'r', // last layer is relu, for pixels, for some reason.
 					layer_types[i],
-					LW, 
-					(i==0) ? input_width : LW // we have input_width inputs and everything else is LW
+					(i == LH - 1) ? LWO : LW, // last layer has LWO nodes, everything else has LW
+					(i == 0) ? input_width : LW // first layer has input_width inputs, everything else has LW inputs
 			);
 
 			layers[i].collect_params(params);
@@ -487,7 +490,7 @@ class Network
 		}
 
 		output_values = activations[LH];
-		for (i = 0; i < LW; i++)
+		for (i = 0; i < last_layer_width; i++)
 		{
 			output[i] = activations[LH][i]->value;
 		}
@@ -497,21 +500,24 @@ class Network
 	Value* compute_loss(float* predicted)
 	{
 		loss_scratch.clear();
-		loss_scratch.reserve(4 * LW);
+		loss_scratch.reserve(4 * last_layer_width);
 
 		// loss = sum ( (out - pred)^2 )
 		int i;
-		for (i = 0; i < LW; i++)
+		for (i = 0; i < last_layer_width; i++)
 		{
 //printf("out=%f pred=%f\n", output_values[i]->value, predicted[i]);
 			loss_scratch.emplace_back('+', 0.0, 0.0f-predicted[i], output_values[i], (Value*)NULL);
 			loss_scratch.emplace_back('+', 0.0, 0.0f-predicted[i], output_values[i], (Value*)NULL);
 			loss_scratch.emplace_back('*', 0.0, 0.0, &loss_scratch[loss_scratch.size() - 1], &loss_scratch[loss_scratch.size() - 2]);
 		}
-		loss_scratch.emplace_back('+', 0.0, 0.0, &loss_scratch[0*3 + 2], &loss_scratch[1*3 + 2]);
-		for (i = 2; i < LW; i++)
+		if (last_layer_width > 1)
 		{
-			loss_scratch.emplace_back('+', 0.0, 0.0, &loss_scratch[i*3 + 2], &loss_scratch[loss_scratch.size() - 1]);
+			loss_scratch.emplace_back('+', 0.0, 0.0, &loss_scratch[0*3 + 2], &loss_scratch[1*3 + 2]);
+			for (i = 2; i < last_layer_width; i++)
+			{
+				loss_scratch.emplace_back('+', 0.0, 0.0, &loss_scratch[i*3 + 2], &loss_scratch[loss_scratch.size() - 1]);
+			}
 		}
 
 		return &loss_scratch[loss_scratch.size() - 1];

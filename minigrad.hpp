@@ -8,9 +8,9 @@
 #include <cstring>
 #include <cstdio>
 
-#define LW 100
-#define LH 5
-#define LAYER_TYPES	0, 'r', 'r', 'r', 0
+#define LW 24
+#define LH 3
+#define LAYER_TYPES	'r', 'r', 0
 #define LWO 1
 
 #define ACTIVATION_SIGMOID 0
@@ -34,11 +34,12 @@ struct Value
 		int i;
 		float sum = 0.0f;
 
-		for (i = 0; i < 100; i++)
+		for (i = 0; i < 10; i++)
 		{
-			sum += (rand() % 2000) / 1000.0f - 1.0f;
+			sum += ((rand() % 2000) / 1000.0f - 1.0f) / 1000.0f;
 		}
 
+//		return fabs(sum);
 		return sum;
 	}
 	
@@ -132,10 +133,11 @@ struct Value
 //		if (grad > 0.0f)
 //		printf("%c %f\n", op ? op : '0', grad);
 //
-		if (grad > 100.0f)
-			grad = 100.0f;
-		if (grad < -100.0f)
-			grad = -100.0f;
+/*
+		if (grad > 10000.0f)
+			grad = 10000.0f;
+		if (grad < -10000.0f)
+			grad = -10000.0f;*/
 		switch (op)
 		{
 			case 0:
@@ -158,7 +160,7 @@ struct Value
 				break;
 
 			case 'r':
-				if (prev0) prev0->grad += ((p1 > 0.0f) ? 1.0f : 0.001f) * grad;
+				if (prev0) prev0->grad += ((p1 > 0.0f) ? 1.0f : 0.00001f) * grad;
 				break;
 
 			case 't':
@@ -214,6 +216,8 @@ struct Value
 
 		grad = 1.0f;
 
+		assert(topo.back()->grad == 1.0f);
+
 /*		while (!topo.empty())
 		{
 			Value* v = topo.back(); topo.pop_back();
@@ -223,6 +227,7 @@ struct Value
 */
 		for (auto&& v: topo | std::views::reverse)
 		{
+//printf("b: %f\n", v->grad);
 			v->backward_op();
 		}
 	}
@@ -237,6 +242,7 @@ struct Value
 			build_topo(visited, topo, this);
 		}
 
+//printf("zeroing %d...\n", topo.size());
 		for (auto&& v : topo)
 		{
 			v->grad = 0.0;
@@ -528,13 +534,15 @@ class Network
 		int nonzero_count = 0;
 		for (auto&& v : params)
 		{
-//			printf("%f - %f * %f\n", v->value, learning_rate, v->grad);
-//
+//printf("%f - %f * %f =>", v->value, learning_rate, v->grad);
+			
 			v->value = v->value - learning_rate * v->grad;
-			if (fabs(v->grad) > 0.0000000001f)
-			{
-				nonzero_count++;
-			}
+//			if (fabs(v->grad) > 0.0000000001f)
+//			{
+//				nonzero_count++;
+//			}
+
+//printf("%f\n", v->value);
 		}
 
 		// TODO warn if zero grads?

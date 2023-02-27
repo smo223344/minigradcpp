@@ -8,7 +8,7 @@
 #include <cstring>
 #include <cstdio>
 
-#define LW 24
+#define LW 64
 #define LH 3
 #define LAYER_TYPES	'r', 'r', 0
 #define LWO 1

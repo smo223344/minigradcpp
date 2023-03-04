@@ -30,7 +30,7 @@ void save_output(float* output, int x, int y, int iter)
 	}
 	
 	char filename[32];
-	snprintf(filename, 32, "7test_iter_%03d.png", iter);
+	snprintf(filename, 32, "9test_iter_%03d.png", iter);
 	stbi_write_png(filename, x, y, 1, output_bytes, x);
 
 	free(output_bytes);
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
 	network.init(20);
 	
 
-	int total_epochs = 1000;
+	int total_epochs = 2000;
 	int epochs = total_epochs;
 	float coords[3] = { 0.0f, 0.0f, 0.0f };
 	float encoded_input[20];
@@ -83,16 +83,16 @@ int main(int argc, char** argv)
 	float learning_rate = 0.001f;
 	while (epochs--)
 	{
-		if (epochs == 800) learning_rate /= 2.0f;
-		if (epochs == 650) learning_rate /= 2.0f;
-/*		if (epochs == 450) learning_rate /= 2.0f;
+		if (epochs == 1800) learning_rate /= 2.0f;
+/*		if (epochs == 650) learning_rate /= 2.0f;
+		if (epochs == 450) learning_rate /= 2.0f;
 		if (epochs == 400) learning_rate /= 2.0f;
 		if (epochs == 300) learning_rate /= 2.0f;
-		if (epochs == 200) learning_rate /= 2.0f;*/
+		if (epochs == 200) learning_rate /= 2.0f;
 		if (epochs == 100) learning_rate /= 2.0f;
 		if (epochs == 70) learning_rate /= 2.0f;
 		if (epochs == 35) learning_rate /= 2.0f;
-		if (epochs == 10) learning_rate /= 2.0f;
+		if (epochs == 10) learning_rate /= 2.0f;*/
 
 		float cumulative_loss = 0.0f;
 //		for (yy = 30; yy < 70; yy++)
